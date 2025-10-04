@@ -1,6 +1,11 @@
 package main
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"log"
+	"os"
+
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type Model struct{}
 
@@ -24,5 +29,24 @@ func (m Model) View() string {
 }
 
 func main() {
-	tea.NewProgram(Model{}).Run()
+	// Error logging
+	file, err := os.OpenFile("debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	log.SetOutput(file)
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	// End of error logging
+
+	log.Println("Program started")
+
+	if _, err := tea.NewProgram(Model{}).Run(); err != nil {
+		log.Fatalf("Error running program: %v", err)
+	}
+
+	log.Println("Program ended")
+
+	// End of program
 }
