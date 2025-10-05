@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,7 +37,37 @@ func (ui *FishHistoryUI) RenderHistoryView() string {
 		sb.WriteString("\n\n")
 	}
 
-	sb.WriteString("Press 'q' to quit")
+	sb.WriteString("Press 'q' to quit, '/' to search")
+	return sb.String()
+}
+
+// RenderSearchView renders the search results view
+func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, selectedIndex int) string {
+	if !ui.service.IsHistoryLoaded() {
+		return "Loading fish history...\n\nPress 'q' to quit"
+	}
+
+	var sb strings.Builder
+	sb.WriteString("🔍 Search Results\n")
+	sb.WriteString("=================\n\n")
+	sb.WriteString("Query: " + query + "\n\n")
+
+	if len(results) == 0 {
+		sb.WriteString("No commands found matching your search.\n\n")
+	} else {
+		sb.WriteString(fmt.Sprintf("Found %d matching commands:\n\n", len(results)))
+
+		for i, cmd := range results {
+			prefix := "  "
+			if i == selectedIndex {
+				prefix = "> "
+			}
+			sb.WriteString(prefix + ui.service.FormatCommand(cmd, i))
+			sb.WriteString("\n\n")
+		}
+	}
+
+	sb.WriteString("Press 'q' to quit, 'esc' to exit search")
 	return sb.String()
 }
 
