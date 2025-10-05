@@ -131,7 +131,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case "/":
 				m.logger.Info("Entering search mode")
 				m.searchMode = true
-				m.searchService.Clear()
+				// Initialize with empty query to show last 5 commands
+				m.searchService.UpdateQuery(m.historyUI.service.GetHistory(), "")
 				return m, nil
 			case "up", "ctrl+k":
 				if m.historySelectedIndex > 0 {
@@ -167,7 +168,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if len(key) == 1 && key != "q" {
 					m.logger.Info("Auto-entering search mode")
 					m.searchMode = true
-					m.searchService.Clear()
+					// Initialize with empty query to show last 5 commands
+					m.searchService.UpdateQuery(m.historyUI.service.GetHistory(), "")
 					// Add the typed character to the search query
 					m.searchService.UpdateQuery(m.historyUI.service.GetHistory(), key)
 					return m, nil

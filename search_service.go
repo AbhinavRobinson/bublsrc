@@ -95,7 +95,11 @@ func (s *SearchService) Clear() {
 // searchCommands is the internal search implementation
 func (s *SearchService) searchCommands(commands []FishCommand, query string) []FishCommand {
 	if query == "" {
-		return []FishCommand{}
+		// Return last 5 commands when no search query
+		if len(commands) <= 5 {
+			return commands
+		}
+		return commands[:5]
 	}
 
 	query = strings.ToLower(query)

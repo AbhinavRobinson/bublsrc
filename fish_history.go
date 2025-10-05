@@ -215,10 +215,20 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 	}
 
 	// Create beautiful header
-	header := headerStyle.Render("🔍 Search Results")
+	var header string
+	if query == "" {
+		header = headerStyle.Render("🐟 Fish History")
+	} else {
+		header = headerStyle.Render("🔍 Search Results")
+	}
 
 	// Create search query display
-	queryDisplay := searchPromptStyle.Render("Query: ") + commandTextStyle.Render(query)
+	var queryDisplay string
+	if query == "" {
+		queryDisplay = statusStyle.Render("Recent Commands")
+	} else {
+		queryDisplay = searchPromptStyle.Render("Query: ") + commandTextStyle.Render(query)
+	}
 
 	var content string
 
@@ -236,7 +246,9 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 		totalCount := len(results)
 		displayCount := len(displayResults)
 		var countText string
-		if totalCount > 5 {
+		if query == "" {
+			countText = fmt.Sprintf("Showing %d recent commands:", displayCount)
+		} else if totalCount > 5 {
 			countText = fmt.Sprintf("Found %d matching commands (showing top %d):", totalCount, displayCount)
 		} else {
 			countText = fmt.Sprintf("Found %d matching commands:", displayCount)
@@ -274,7 +286,12 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 	}
 
 	// Create help text
-	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy")
+	var help string
+	if query == "" {
+		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
+	} else {
+		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy")
+	}
 
 	// Combine everything
 	fullContent := content + "\n\n" + help
