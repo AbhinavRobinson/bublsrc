@@ -125,7 +125,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		} else {
 			// Handle normal mode
 			switch key {
-			case "q", "esc", "ctrl+c":
+			case "esc", "ctrl+c":
 				m.logger.Info("Quit command received")
 				return m, tea.Quit
 			case "/":
@@ -165,7 +165,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			default:
 				// Auto-enter search mode when typing
-				if len(key) == 1 && key != "q" {
+				if len(key) == 1 {
 					m.logger.Info("Auto-entering search mode")
 					m.searchMode = true
 					// Initialize with empty query to show last 5 commands

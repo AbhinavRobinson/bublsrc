@@ -163,7 +163,7 @@ func NewFishHistoryUI(service *FishHistoryService, logger *LoggerService) *FishH
 func (ui *FishHistoryUI) RenderHistoryView(selectedIndex int) string {
 	if !ui.service.IsHistoryLoaded() {
 		loading := loadingStyle.Render("🔄 Loading fish history...")
-		help := helpStyle.Render("Press " + keyStyle.Render("q") + " to quit")
+		help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit")
 		return containerStyle.Render(loading + "\n\n" + help)
 	}
 
@@ -196,7 +196,7 @@ func (ui *FishHistoryUI) RenderHistoryView(selectedIndex int) string {
 	commandList := strings.Join(commands, "\n\n")
 
 	// Create help text
-	help := helpStyle.Render("Press " + keyStyle.Render("q") + " to quit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
+	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
 
 	// Combine everything
 	content := header + "\n" + subtitle + "\n\n" + commandList + "\n\n" + help
@@ -210,7 +210,7 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 
 	if !ui.service.IsHistoryLoaded() {
 		loading := loadingStyle.Render("🔄 Loading fish history...")
-		help := helpStyle.Render("Press " + keyStyle.Render("q") + " to quit")
+		help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit")
 		return containerStyle.Render(loading + "\n\n" + help)
 	}
 
@@ -288,9 +288,9 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 	// Create help text
 	var help string
 	if query == "" {
-		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
+		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
 	} else {
-		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy")
+		help = helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("ESC") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy")
 	}
 
 	// Combine everything
