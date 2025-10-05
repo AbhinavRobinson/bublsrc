@@ -5,16 +5,28 @@ import (
 )
 
 type Model struct {
-	logger *Logger
+	logger    *LoggerService
+	historyUI *FishHistoryUI
 }
 
 func (m Model) Init() tea.Cmd {
 	m.logger.Info("Model initialized")
-	return nil
+	return m.loadFishHistory
+}
+
+func (m Model) loadFishHistory() tea.Msg {
+	return m.historyUI.LoadHistoryMessage()
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case fishHistoryMsg:
+		if msg.err != nil {
+			m.logger.Errorf("Failed to load fish history: %v", msg.err)
+			return m, nil
+		}
+		m.logger.Infof("Fish history loaded successfully")
+		return m, nil
 	case tea.KeyMsg:
 		key := msg.String()
 		m.logger.Debugf("Key pressed: %s", key)
@@ -28,11 +40,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
-	return "Hello, World!"
+	return m.historyUI.RenderHistoryView()
 }
 
-func NewApp(logger *Logger) *Model {
+func NewApp(logger *LoggerService) *Model {
+	historyService := NewFishHistoryService(logger)
+	historyUI := NewFishHistoryUI(historyService)
 	return &Model{
-		logger: logger,
+		logger:    logger,
+		historyUI: historyUI,
 	}
 }

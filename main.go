@@ -14,7 +14,7 @@ func main() {
 	}
 	defer logFile.Close()
 
-	logger := NewLogger(logFile, DEBUG)
+	logger := NewLoggerService(logFile, DEBUG)
 
 	logger.Info("Program started")
 
