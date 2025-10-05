@@ -10,6 +10,8 @@ type Model struct {
 	searchService *SearchService
 	// Search state
 	searchMode bool
+	// History selection state
+	historySelectedIndex int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -30,6 +32,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.logger.Infof("Fish history loaded successfully")
 		return m, nil
+	case tea.WindowSizeMsg:
+		// Handle window resizing
+		m.historyUI.SetSize(msg.Width, msg.Height)
+		return m, nil
 	case tea.KeyMsg:
 		key := msg.String()
 		m.logger.Debugf("Key pressed: %s", key)
@@ -42,13 +48,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.searchMode = false
 				m.searchService.Clear()
 				return m, nil
-			case "q", "ctrl+c":
+			case "ctrl+c":
 				m.logger.Info("Quit command received")
 				return m, tea.Quit
-			case "up", "k":
+			case "up", "ctrl+k":
 				m.searchService.NavigateUp()
 				return m, nil
-			case "down", "j":
+			case "down", "ctrl+j":
 				m.searchService.NavigateDown()
 				return m, nil
 			case "backspace":
@@ -61,7 +67,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Could implement command execution here
 				return m, nil
 			default:
-				// Add character to search query
+				// Add character to search query (including j, k, q)
 				if len(key) == 1 {
 					newQuery := m.searchService.GetQuery() + key
 					m.searchService.UpdateQuery(m.historyUI.service.GetHistory(), newQuery)
@@ -79,6 +85,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.searchMode = true
 				m.searchService.Clear()
 				return m, nil
+			case "up", "ctrl+k":
+				if m.historySelectedIndex > 0 {
+					m.historySelectedIndex--
+					m.logger.Debugf("History navigation up: index=%d", m.historySelectedIndex)
+				}
+				return m, nil
+			case "down", "ctrl+j":
+				// Limit to top 5 commands (0-4)
+				maxIndex := 4
+				if m.historySelectedIndex < maxIndex {
+					m.historySelectedIndex++
+					m.logger.Debugf("History navigation down: index=%d", m.historySelectedIndex)
+				}
+				return m, nil
 			}
 		}
 	}
@@ -89,12 +109,12 @@ func (m Model) View() string {
 	if m.searchMode {
 		return m.historyUI.RenderSearchView(m.searchService.GetQuery(), m.searchService.GetResults(), m.searchService.GetIndex())
 	}
-	return m.historyUI.RenderHistoryView()
+	return m.historyUI.RenderHistoryView(m.historySelectedIndex)
 }
 
 func NewApp(logger *LoggerService) *Model {
 	historyService := NewFishHistoryService(logger)
-	historyUI := NewFishHistoryUI(historyService)
+	historyUI := NewFishHistoryUI(historyService, logger)
 	searchService := NewSearchService(logger)
 	return &Model{
 		logger:        logger,

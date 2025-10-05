@@ -36,13 +36,20 @@ func (s *SearchService) NavigateUp() {
 	if s.index > 0 {
 		s.index--
 	}
+	s.logger.Debugf("NavigateUp: index=%d, results=%d", s.index, len(s.results))
 }
 
 // NavigateDown moves the selection down in the results
 func (s *SearchService) NavigateDown() {
-	if s.index < len(s.results)-1 {
+	// Limit navigation to top 5 results for display
+	maxIndex := len(s.results) - 1
+	if maxIndex > 4 {
+		maxIndex = 4 // Limit to top 5 (0-4)
+	}
+	if s.index < maxIndex {
 		s.index++
 	}
+	s.logger.Debugf("NavigateDown: index=%d, maxIndex=%d, results=%d", s.index, maxIndex, len(s.results))
 }
 
 // GetSelectedCommand returns the currently selected command
