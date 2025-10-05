@@ -80,6 +80,23 @@ var (
 			Italic(true).
 			Margin(1, 0)
 
+	// Status message styles - more subtle and elegant
+	statusMessageStyle = lipgloss.NewStyle().
+				Foreground(successColor).
+				Bold(true).
+				Background(lipgloss.Color("#0F172A")).
+				Padding(0, 1).
+				Margin(0, 2).
+				Align(lipgloss.Center)
+
+	statusErrorStyle = lipgloss.NewStyle().
+				Foreground(errorColor).
+				Bold(true).
+				Background(lipgloss.Color("#0F172A")).
+				Padding(0, 1).
+				Margin(0, 2).
+				Align(lipgloss.Center)
+
 	loadingStyle = lipgloss.NewStyle().
 			Foreground(accentColor).
 			Bold(true).
@@ -179,7 +196,7 @@ func (ui *FishHistoryUI) RenderHistoryView(selectedIndex int) string {
 	commandList := strings.Join(commands, "\n\n")
 
 	// Create help text
-	help := helpStyle.Render("Press " + keyStyle.Render("q") + " to quit, " + keyStyle.Render("/") + " to search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate")
+	help := helpStyle.Render("Press " + keyStyle.Render("q") + " to quit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
 
 	// Combine everything
 	content := header + "\n" + subtitle + "\n\n" + commandList + "\n\n" + help
@@ -257,7 +274,7 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 	}
 
 	// Create help text
-	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate")
+	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("esc") + " to exit search, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy")
 
 	// Combine everything
 	fullContent := content + "\n\n" + help
@@ -304,4 +321,12 @@ func (ui *FishHistoryUI) RenderSearchInput() string {
 	searchBox := searchBoxStyle.Render(ui.searchInput.View())
 	prompt := searchPromptStyle.Render("Search: ")
 	return prompt + searchBox
+}
+
+// RenderStatusMessage renders a status message with appropriate styling
+func (ui *FishHistoryUI) RenderStatusMessage(message string) string {
+	if strings.Contains(message, "❌") {
+		return statusErrorStyle.Render(message)
+	}
+	return statusMessageStyle.Render(message)
 }

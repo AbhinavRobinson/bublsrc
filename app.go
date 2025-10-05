@@ -1,8 +1,23 @@
 package main
 
 import (
+	"time"
+
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+// statusMsg represents a status message update
+type statusMsg struct {
+	message string
+}
+
+// showStatus creates a status message that will be displayed
+func (m Model) showStatus(message string) tea.Cmd {
+	return func() tea.Msg {
+		return statusMsg{message: message}
+	}
+}
 
 type Model struct {
 	logger        *LoggerService
@@ -12,6 +27,9 @@ type Model struct {
 	searchMode bool
 	// History selection state
 	historySelectedIndex int
+	// Status message for UI feedback
+	statusMessage string
+	statusTimer   int
 }
 
 func (m Model) Init() tea.Cmd {
@@ -25,6 +43,25 @@ func (m Model) loadFishHistory() tea.Msg {
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case statusMsg:
+		m.statusMessage = msg.message
+		m.statusTimer = 3 // Show for 3 seconds
+		return m, tea.Tick(time.Second, func(time.Time) tea.Msg {
+			return time.Time{}
+		})
+	case time.Time:
+		if m.statusTimer > 0 {
+			m.statusTimer--
+			if m.statusTimer == 0 {
+				m.statusMessage = ""
+			}
+			if m.statusTimer > 0 {
+				return m, tea.Tick(time.Second, func(time.Time) tea.Msg {
+					return time.Time{}
+				})
+			}
+		}
+		return m, nil
 	case fishHistoryMsg:
 		if msg.err != nil {
 			m.logger.Errorf("Failed to load fish history: %v", msg.err)
@@ -64,7 +101,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				return m, nil
 			case "enter":
-				// Could implement command execution here
+				// Copy selected command to clipboard
+				selectedCmd := m.searchService.GetSelectedCommand()
+				if selectedCmd != nil {
+					err := clipboard.WriteAll(selectedCmd.Command)
+					if err != nil {
+						m.logger.Errorf("Failed to copy to clipboard: %v", err)
+						return m, m.showStatus("❌ Copy failed")
+					} else {
+						m.logger.Infof("Copied command to clipboard: %s", selectedCmd.Command)
+						return m, m.showStatus("✅ Copied to clipboard")
+					}
+				}
 				return m, nil
 			default:
 				// Add character to search query (including j, k, q)
@@ -99,6 +147,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.logger.Debugf("History navigation down: index=%d", m.historySelectedIndex)
 				}
 				return m, nil
+			case "enter":
+				// Copy selected command to clipboard
+				history := m.historyUI.service.GetHistory()
+				if m.historySelectedIndex >= 0 && m.historySelectedIndex < len(history) {
+					selectedCmd := history[m.historySelectedIndex]
+					err := clipboard.WriteAll(selectedCmd.Command)
+					if err != nil {
+						m.logger.Errorf("Failed to copy to clipboard: %v", err)
+						return m, m.showStatus("❌ Copy failed")
+					} else {
+						m.logger.Infof("Copied command to clipboard: %s", selectedCmd.Command)
+						return m, m.showStatus("✅ Copied to clipboard")
+					}
+				}
+				return m, nil
+			default:
+				// Auto-enter search mode when typing
+				if len(key) == 1 && key != "q" {
+					m.logger.Info("Auto-entering search mode")
+					m.searchMode = true
+					m.searchService.Clear()
+					// Add the typed character to the search query
+					m.searchService.UpdateQuery(m.historyUI.service.GetHistory(), key)
+					return m, nil
+				}
 			}
 		}
 	}
@@ -106,10 +179,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) View() string {
+	var content string
 	if m.searchMode {
-		return m.historyUI.RenderSearchView(m.searchService.GetQuery(), m.searchService.GetResults(), m.searchService.GetIndex())
+		content = m.historyUI.RenderSearchView(m.searchService.GetQuery(), m.searchService.GetResults(), m.searchService.GetIndex())
+	} else {
+		content = m.historyUI.RenderHistoryView(m.historySelectedIndex)
 	}
-	return m.historyUI.RenderHistoryView(m.historySelectedIndex)
+
+	// Add status message if present - positioned at the bottom
+	if m.statusMessage != "" {
+		content += "\n\n" + m.historyUI.RenderStatusMessage(m.statusMessage)
+	}
+
+	return content
 }
 
 func NewApp(logger *LoggerService) *Model {
