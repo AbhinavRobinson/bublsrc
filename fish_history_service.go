@@ -86,15 +86,37 @@ func (s *FishHistoryService) LoadHistory() ([]FishCommand, error) {
 		commands = append(commands, currentCmd)
 	}
 
+	// Filter out bublsrc commands
+	var filteredCommands []FishCommand
+	for _, cmd := range commands {
+		if !strings.Contains(cmd.Command, "bublsrc") {
+			filteredCommands = append(filteredCommands, cmd)
+		}
+	}
+
 	// Sort by timestamp (newest first)
-	sort.Slice(commands, func(i, j int) bool {
-		return commands[i].When.After(commands[j].When)
+	sort.Slice(filteredCommands, func(i, j int) bool {
+		return filteredCommands[i].When.After(filteredCommands[j].When)
 	})
 
-	s.history = commands
+	// Remove consecutive duplicate commands
+	var deduplicatedCommands []FishCommand
+	for i, cmd := range filteredCommands {
+		// Always include the first command
+		if i == 0 {
+			deduplicatedCommands = append(deduplicatedCommands, cmd)
+			continue
+		}
+		// Only include if it's different from the previous command
+		if cmd.Command != filteredCommands[i-1].Command {
+			deduplicatedCommands = append(deduplicatedCommands, cmd)
+		}
+	}
+
+	s.history = deduplicatedCommands
 	s.historyLoaded = true
-	s.logger.Infof("Loaded %d fish history commands", len(commands))
-	return commands, nil
+	s.logger.Infof("Loaded %d fish history commands (filtered from %d total, %d duplicates removed)", len(deduplicatedCommands), len(commands), len(filteredCommands)-len(deduplicatedCommands))
+	return deduplicatedCommands, nil
 }
 
 // GetLastCommands returns the last N commands from the stored history

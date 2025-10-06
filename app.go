@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -53,6 +54,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.statusTimer > 0 {
 			m.statusTimer--
 			if m.statusTimer == 0 {
+				// If this was a copy success message, quit the app
+				if m.statusMessage == "✅ Copied to clipboard" {
+					return m, tea.Quit
+				}
 				m.statusMessage = ""
 			}
 			if m.statusTimer > 0 {
@@ -110,7 +115,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, m.showStatus("❌ Copy failed")
 					} else {
 						m.logger.Infof("Copied command to clipboard: %s", selectedCmd.Command)
-						return m, m.showStatus("✅ Copied to clipboard")
+						m.statusMessage = "✅ Copied to clipboard"
+						m.statusTimer = 1 // Show for 1 second then quit
+						return m, tea.Tick(time.Second, func(time.Time) tea.Msg {
+							return time.Time{}
+						})
 					}
 				}
 				return m, nil
@@ -159,7 +168,42 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						return m, m.showStatus("❌ Copy failed")
 					} else {
 						m.logger.Infof("Copied command to clipboard: %s", selectedCmd.Command)
-						return m, m.showStatus("✅ Copied to clipboard")
+						m.statusMessage = "✅ Copied to clipboard"
+						m.statusTimer = 1 // Show for 1 second then quit
+						return m, tea.Tick(time.Second, func(time.Time) tea.Msg {
+							return time.Time{}
+						})
+					}
+				}
+				return m, nil
+			case "1", "2", "3", "4", "5":
+				// Direct copy by number (1-5) - follow the existing numbering
+				lastCommands := m.historyUI.service.GetLastCommands(5)
+				commandNum, _ := strconv.Atoi(key)
+
+				if commandNum >= 1 && commandNum <= len(lastCommands) {
+					// The numbering is: 5=oldest(top), 4, 3, 2, 1=newest(bottom)
+					// So: displayIndex = commandNum - 1, and we want the command at that displayIndex
+					displayIndex := commandNum - 1
+					selectedCmd := lastCommands[displayIndex]
+
+					// Move selection to match the display position (i in the loop)
+					// displayIndex = len(lastCommands) - 1 - i, so i = len(lastCommands) - 1 - displayIndex
+					displayPosition := len(lastCommands) - 1 - displayIndex
+					m.historySelectedIndex = displayPosition
+					m.logger.Debugf("Pressed %d, displayIndex=%d, displayPosition=%d, copying command: %s", commandNum, displayIndex, displayPosition, selectedCmd.Command)
+
+					err := clipboard.WriteAll(selectedCmd.Command)
+					if err != nil {
+						m.logger.Errorf("Failed to copy to clipboard: %v", err)
+						return m, m.showStatus("❌ Copy failed")
+					} else {
+						m.logger.Infof("Copied command to clipboard: %s", selectedCmd.Command)
+						m.statusMessage = "✅ Copied to clipboard"
+						m.statusTimer = 2 // Show for 2 seconds so user can see the selection move
+						return m, tea.Tick(time.Second, func(time.Time) tea.Msg {
+							return time.Time{}
+						})
 					}
 				}
 				return m, nil
@@ -201,9 +245,10 @@ func NewApp(logger *LoggerService) *Model {
 	historyUI := NewFishHistoryUI(historyService, logger)
 	searchService := NewSearchService(logger)
 	return &Model{
-		logger:        logger,
-		historyUI:     historyUI,
-		searchService: searchService,
-		searchMode:    false,
+		logger:               logger,
+		historyUI:            historyUI,
+		searchService:        searchService,
+		searchMode:           false,
+		historySelectedIndex: 4, // Start with most recent command selected (last in list)
 	}
 }

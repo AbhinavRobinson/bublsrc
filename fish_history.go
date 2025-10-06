@@ -174,21 +174,27 @@ func (ui *FishHistoryUI) RenderHistoryView(selectedIndex int) string {
 	// Get last 5 commands using service
 	lastCommands := ui.service.GetLastCommands(5)
 
-	// Create command list with beautiful styling
+	// Create command list with beautiful styling (reverse order - oldest first, newest last)
 	var commands []string
 	for i, cmd := range lastCommands {
+		// Reverse the index for display order
+		displayIndex := len(lastCommands) - 1 - i
+		cmd = lastCommands[displayIndex]
+
 		var prefix string
+		// Check if this display position matches the selected index
 		if i == selectedIndex {
 			prefix = selectedItemStyle.Render("▶")
 		} else {
 			prefix = "  "
 		}
 
-		number := commandNumberStyle.Render(fmt.Sprintf("%d.", i+1))
+		// Use displayIndex + 1 for correct numbering (oldest=1, newest=5)
+		number := commandNumberStyle.Render(fmt.Sprintf("%d.", displayIndex+1))
 		command := commandTextStyle.Render(cmd.Command)
 		timestamp := timestampStyle.Render(cmd.When.Format("2006-01-02 15:04:05"))
 
-		commandLine := fmt.Sprintf("%s %s %s\n   %s", prefix, number, command, timestamp)
+		commandLine := fmt.Sprintf("%s %s %s %s", prefix, number, command, timestamp)
 		commands = append(commands, commandLine)
 	}
 
@@ -196,7 +202,7 @@ func (ui *FishHistoryUI) RenderHistoryView(selectedIndex int) string {
 	commandList := strings.Join(commands, "\n\n")
 
 	// Create help text
-	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("↑/↓") + " or " + keyStyle.Render("Ctrl+J/K") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
+	help := helpStyle.Render("Press " + keyStyle.Render("Ctrl+C") + " to quit, " + keyStyle.Render("1-5") + " to copy & exit, " + keyStyle.Render("↑/↓") + " to navigate, " + keyStyle.Render("Enter") + " to copy, " + keyStyle.Render("type") + " to search")
 
 	// Combine everything
 	content := header + "\n" + subtitle + "\n\n" + commandList + "\n\n" + help
@@ -255,9 +261,13 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 		}
 		count := statusStyle.Render(countText)
 
-		// Create results list with beautiful styling
+		// Create results list with beautiful styling (reverse order - oldest first, newest last)
 		var resultItems []string
 		for i, cmd := range displayResults {
+			// Reverse the index for display order
+			displayIndex := len(displayResults) - 1 - i
+			cmd = displayResults[displayIndex]
+
 			var prefix string
 			// Only adjust selectedIndex if it's out of bounds
 			displaySelectedIndex := selectedIndex
@@ -267,17 +277,19 @@ func (ui *FishHistoryUI) RenderSearchView(query string, results []FishCommand, s
 				displaySelectedIndex = 0
 			}
 
+			// Check if this display position matches the selected index
 			if i == displaySelectedIndex {
 				prefix = selectedItemStyle.Render("▶")
 			} else {
 				prefix = "  "
 			}
 
-			number := commandNumberStyle.Render(fmt.Sprintf("%d.", i+1))
+			// Use displayIndex + 1 for correct numbering (oldest=1, newest=5)
+			number := commandNumberStyle.Render(fmt.Sprintf("%d.", displayIndex+1))
 			command := commandTextStyle.Render(cmd.Command)
 			timestamp := timestampStyle.Render(cmd.When.Format("2006-01-02 15:04:05"))
 
-			resultLine := fmt.Sprintf("%s %s %s\n   %s", prefix, number, command, timestamp)
+			resultLine := fmt.Sprintf("%s %s %s %s", prefix, number, command, timestamp)
 			resultItems = append(resultItems, resultLine)
 		}
 
